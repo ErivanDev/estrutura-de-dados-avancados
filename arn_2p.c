@@ -226,7 +226,7 @@ int Consultar(Arn* T, int valor) {
             return 1;
         }
 
-        if( valor > x->dir->key ) {
+        if( valor >= x->dir->key ) {
             x = x->dir;
         }
         else {
@@ -290,16 +290,29 @@ int main() {
 
     int numeros[15] = {20, 30, 10, 15, 50, 60, 7, 3, 2, 25, 40, 55, 70, 22, 56};
 
-    for (int i = 0; i < 15; i++) {
+    for (int i = 0; i < 9; i++) {
         Incluir(T, numeros[i]);
+        printf("------------------------------\n");
+        PreOrdem(T->raiz, 0, (int) -INFINITY, "v");
     }
+
+    /*for (int i = 0; i < 15; i++) {
+        Incluir(T, numeros[i]);
+    }*/
 
     // Exibe o resultado
     // PreOrdem(T->raiz, 0, (int) -INFINITY, "v");
 
     // printf("------------------------------\n");
 
-    Remover(T, 50);
+    // Remover(T, 50);
+    // Remover(T, 20);
+    // Remover(T, 3);
+
+    // Exibe o resultado
+    // PreOrdem(T->raiz, 0, (int) -INFINITY, "v");
+
+    // printf("------------------------------\n");
 
     // Exibe o resultado
     // PreOrdem(T->raiz, 0, (int) -INFINITY, "v");
