@@ -11,31 +11,36 @@ Propriedades da Arvore Rubro Negra
 typedef struct Arn Arn;
 typedef struct no no;
 
+typedef enum { KEY, LEFT, RIGHT, COR } Tipo;
+typedef enum { NEGRO, RUBRO } Cor;
+
 Arn* CriarArvore();
 
 no* CriarNo(int valor);
 
-void TrocarCor(no* x);
+no* TrocarCor(no* x, int versao);
 
-no* RotacaoESQ(no* x);
+no* RotacaoESQ(no* x, int versao);
 
-no* RotacaoDIR(no* x);
+no* RotacaoDIR(no* x, int versao);
 
-no* MoverEsquerda(no* x);
+no* MoverEsquerda(no* x, int versao);
 
-no* MoverDireita(no* x);
+no* MoverDireita(no* x, int versao);
 
-no* IncluirRecursivo(no* x, int valor);
+no* SalvarModificacao(no* z, Tipo tipo, int versao, void* valor);
+
+no* IncluirRecursivo(no* x, int valor, int versao);
 
 void Incluir(Arn* T, int valor);
 
-no* Balancear(no* x);
+no* Balancear(no* x, int versao);
 
-no* RemoverMenor(no* x);
+no* RemoverMenor(no* x, int versao);
 
-no* ProcurarMenor(no* x);
+no* ProcurarMenor(no* x, int versao);
 
-no* RemoverRecursivo(no* x, int valor);
+no* RemoverRecursivo(no* x, int valor, int versao);
 
 int Consultar(Arn* T, int valor);
 
@@ -45,4 +50,4 @@ void PosOrdem(no* x, int nivel, int parent, char* dir);
 
 void EmOrdem(no* x, int nivel, int parent, char* dir);
 
-void PreOrdem(no* x, int nivel, int parent, char* dir);
+void PreOrdem(no* x, int nivel, int parent, char* dir, int versao);
