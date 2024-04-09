@@ -579,7 +579,9 @@ void Remover(Arn* T, int valor) {
         T->raiz[T->ultima_versao] = RemoverRecursivo(T->raiz[T->ultima_versao], valor, T->ultima_versao);
 
         if ( T->raiz[T->ultima_versao] != NIL_PTR ) {
-            T->raiz[T->ultima_versao]->cor = NEGRO;
+            // T->raiz[T->ultima_versao]->cor = NEGRO;
+
+            T->raiz[T->ultima_versao] = SalvarModificacao(T->raiz[T->ultima_versao], COR, T->ultima_versao, (void*) NEGRO);
         }
 
         T->raiz[T->ultima_versao + 1] = T->raiz[T->ultima_versao];
@@ -655,10 +657,12 @@ int main() {
 
     // printf("------------------------------\n");
 
-    // Remover(T, 50);
-    // Remover(T, 20);
-    // Remover(T, 3);
-    // Remover(T, 15);
+    Remover(T, 50);
+    Remover(T, 20);
+    Remover(T, 3);
+    Remover(T, 15);
+    Remover(T, 30);
+    Remover(T, 60);
 
     // Exibe o resultado
     printf("---------- 0 -------- \n");
@@ -685,10 +689,12 @@ int main() {
     PreOrdem(T->raiz[10], 0, (int) -INFINITY, "v", 10);
     printf("---------- 11 ------- \n");
     PreOrdem(T->raiz[11], 0, (int) -INFINITY, "v", 11);
-    // printf("---------- 12 ------- \n");
-    // PreOrdem(T->raiz[12], 0, (int) -INFINITY, "v", 12);
-    // printf("---------- 13 ------- \n");
-    // PreOrdem(T->raiz[13], 0, (int) -INFINITY, "v", 13);
+    printf("---------- 12 ------- \n");
+    PreOrdem(T->raiz[12], 0, (int) -INFINITY, "v", 12);
+    printf("---------- 13 ------- \n");
+    PreOrdem(T->raiz[13], 0, (int) -INFINITY, "v", 13);
+    printf("---------- 14 ------- \n");
+    PreOrdem(T->raiz[14], 0, (int) -INFINITY, "v", 14);
 
     return 0;
 }
