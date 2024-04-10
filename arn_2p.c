@@ -303,18 +303,27 @@ int main() {
     // Exibe o resultado
     // PreOrdem(T->raiz, 0, (int) -INFINITY, "v");
 
-    // printf("------------------------------\n");
+    // printf("------------------------------\n");]
 
     printf("------------------------------\n");
     Remover(T, 50);
-    printf("------------------------------\n");
     PreOrdem(T->raiz, 0, (int) -INFINITY, "v");
+    printf("------------------------------\n");
     Remover(T, 20);
-    printf("------------------------------\n");
     PreOrdem(T->raiz, 0, (int) -INFINITY, "v");
+    printf("------------------------------\n");
     Remover(T, 3);
-    printf("------------------------------\n");
     PreOrdem(T->raiz, 0, (int) -INFINITY, "v");
+    printf("------------------------------\n");
+    Remover(T, 15);
+    PreOrdem(T->raiz, 0, (int) -INFINITY, "v");
+    printf("------------------------------\n");
+    Remover(T, 30);
+    PreOrdem(T->raiz, 0, (int) -INFINITY, "v");
+    printf("------------------------------\n");
+    Remover(T, 60);
+    PreOrdem(T->raiz, 0, (int) -INFINITY, "v");
+    printf("------------------------------\n");
 
 
     // Exibe o resultado
