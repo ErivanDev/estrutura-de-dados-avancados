@@ -10,13 +10,14 @@ Propriedades da Arvore Rubro Negra
 
 typedef struct Arn Arn;
 typedef struct no no;
+typedef struct point point;
 
 typedef enum { KEY, LEFT, RIGHT, COR } Tipo;
 typedef enum { NEGRO, RUBRO } Cor;
 
 Arn* CriarArvore();
 
-no* CriarNo(int valor);
+no* CriarNo(point* segmento);
 
 no* TrocarCor(no* x, int versao);
 
@@ -30,9 +31,9 @@ no* MoverDireita(no* x, int versao);
 
 no* SalvarModificacao(no* z, Tipo tipo, int versao, void* valor);
 
-no* IncluirRecursivo(no* x, int valor, int versao);
+no* IncluirRecursivo(no* x, float valor, point* segmento, int versao);
 
-void Incluir(Arn* T, int valor);
+void Incluir(Arn* T, float valor, point* segmento);
 
 no* Balancear(no* x, int versao);
 
@@ -50,4 +51,4 @@ void PosOrdem(no* x, int nivel, int parent, char* dir);
 
 void EmOrdem(no* x, int nivel, int parent, char* dir);
 
-void PreOrdem(no* x, int nivel, int parent, char* dir, int versao);
+void PreOrdem(no* x, int nivel, int parent, char* d, int versao, float valor);
