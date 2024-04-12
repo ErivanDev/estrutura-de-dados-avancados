@@ -1,4 +1,4 @@
-gcc arn_2p.c -o arn_2p
+gcc arn_2p.c -o arn_2p -lm
 
 1º Passo: arvore rubro-negra.
 2º Passo: persistência.

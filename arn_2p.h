@@ -33,7 +33,7 @@ no* SalvarModificacao(no* z, Tipo tipo, int versao, void* valor);
 
 no* IncluirRecursivo(no* x, float valor, point* segmento, int versao);
 
-void Incluir(Arn* T, float valor, point* segmento);
+int Incluir(Arn* T, float valor, point* segmento);
 
 no* Balancear(no* x, int versao);
 
@@ -41,14 +41,14 @@ no* RemoverMenor(no* x, int versao);
 
 no* ProcurarMenor(no* x, int versao);
 
-no* RemoverRecursivo(no* x, int valor, int versao);
+no* RemoverRecursivo(no* x, float valor, point* segmento, int versao);
 
-int Consultar(Arn* T, int valor);
+int Consultar(Arn* T, float valor, point* segmento);
 
-void Remover(Arn* T, int valor);
+int Remover(Arn* T, float valor, point* segmento);
 
 void PosOrdem(no* x, int nivel, int parent, char* dir);
 
 void EmOrdem(no* x, int nivel, int parent, char* dir);
 
-void PreOrdem(no* x, int nivel, int parent, char* d, int versao, float valor);
+void PreOrdem(no* x, int nivel, float parent, char* d, int versao, float valor);
