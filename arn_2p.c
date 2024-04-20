@@ -6,15 +6,26 @@
 #define MAX_OP 20
 #define MAX_QM 2
 
-struct point
-{
+struct ponto {
     float x;
     float y;
 };
 
+struct linha {
+    ponto p1;
+    ponto p2;
+};
+
+struct reta
+{
+    float x;
+    float y;
+    int r;
+};
+
 /////// PERSISTENCIA //////
 
-struct SKey { point* valor; };
+struct SKey { reta* valor; };
 struct SLeft { no* valor; };
 struct SRight { no* valor; };
 struct SCor { Cor valor; };
@@ -27,19 +38,12 @@ typedef struct {
 
 ///////////////////////////
 
-float fixedFloat(float valor) {
-    return valor;
-    // float rounded_result = (int)(valor * 100000.0) / 100000.0;
-    // return rounded_result;
-}
-
-float calcular_y(float x, point* r1) {
+float calcular_y(float x, reta* r1) {
     return r1->x * x + r1->y;
-    // return fixedFloat( r1->x * x + r1->y );
 }
 
 struct no {
-    struct point*  key;
+    struct reta*  key;
     struct no*     esq;
     struct no*     dir;
     Cor            cor;
@@ -63,7 +67,7 @@ Arn* CriarArvore() {
     return T;
 }
 
-no* CriarNo(point* segmento) {
+no* CriarNo(reta* segmento) {
     no* z = (no*) malloc(sizeof(no));
 
     if ( segmento != NULL ) {
@@ -82,7 +86,7 @@ void* CriarReferencia(Tipo tipo, void* valor) {
         case KEY:   
             struct SKey* skey = (struct SKey*) malloc(sizeof(struct SKey));
             // skey->valor = (int) valor;
-            skey->valor = (point*) valor;
+            skey->valor = (reta*) valor;
             
             ref = (void* ) skey;
             
@@ -283,7 +287,7 @@ no* SalvarModificacao(no* z, Tipo tipo, int versao, void* valor) {
         no* y = CriarNo(NULL);
 
         // int key = ((struct SKey*) PegarModificacao(z, KEY, versao))->valor;
-        point* key = ((struct SKey*) PegarModificacao(z, KEY, versao))->valor;
+        reta* key = ((struct SKey*) PegarModificacao(z, KEY, versao))->valor;
         no* dir = ((struct SRight*) PegarModificacao(z, RIGHT, versao))->valor;
         no* esq = ((struct SLeft*) PegarModificacao(z, LEFT, versao))->valor;
         Cor cor = ((struct SCor*) PegarModificacao(z, COR, versao))->valor;
@@ -310,7 +314,7 @@ no* SalvarModificacao(no* z, Tipo tipo, int versao, void* valor) {
 }
 
 // no* IncluirRecursivo(no* x, int valor, int versao) {
-no* IncluirRecursivo(no* x, float valor, point* segmento, int versao) {
+no* IncluirRecursivo(no* x, float valor, reta* segmento, int versao) {
     if (x == NIL_PTR) {
         no* z = CriarNo(segmento);
         
@@ -318,7 +322,7 @@ no* IncluirRecursivo(no* x, float valor, point* segmento, int versao) {
     }
     
     // int key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
-    point* key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
+    reta* key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
     // if (valor < key) {
     float k1 = calcular_y(valor, segmento);
     float k2 = calcular_y(valor, key);
@@ -401,7 +405,7 @@ no* IncluirRecursivo(no* x, float valor, point* segmento, int versao) {
     return x;
 }
 
-int Incluir(Arn* T, float valor, point* segmento) {
+int Incluir(Arn* T, float valor, reta* segmento) {
     if (!Consultar(T, valor, segmento)) {
         T->raiz[T->ultima_versao] = IncluirRecursivo(T->raiz[T->ultima_versao], valor, segmento, T->ultima_versao);
 
@@ -504,9 +508,9 @@ no* ProcurarMenor(no* x, int versao) {
     return z;
 }
 
-no* RemoverRecursivo(no* x, float valor, point* segmento, int versao) {
+no* RemoverRecursivo(no* x, float valor, reta* segmento, int versao) {
     // int key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
-    point* key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
+    reta* key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
     // if ( valor < key ) {
     if ( calcular_y(valor, segmento) < calcular_y(valor, key) ) {
         no* esq = ((struct SLeft*) PegarModificacao(x, LEFT, versao))->valor;
@@ -539,7 +543,7 @@ no* RemoverRecursivo(no* x, float valor, point* segmento, int versao) {
         }
 
         // int key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
-        point* key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
+        reta* key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
         no* dir = ((struct SRight*) PegarModificacao(x, RIGHT, versao))->valor;
         
         // if ( key == valor && dir == NIL_PTR ) {
@@ -565,7 +569,7 @@ no* RemoverRecursivo(no* x, float valor, point* segmento, int versao) {
             // copia o menor
             no* y = ProcurarMenor(dir, versao);
             // int yKey = ((struct SKey*) PegarModificacao(y, KEY, versao))->valor;
-            point* yKey = ((struct SKey*) PegarModificacao(y, KEY, versao))->valor;
+            reta* yKey = ((struct SKey*) PegarModificacao(y, KEY, versao))->valor;
             
             // x->key = y->key;
             x = SalvarModificacao(x, KEY, versao, yKey);
@@ -596,7 +600,7 @@ no* RemoverRecursivo(no* x, float valor, point* segmento, int versao) {
 }
 
 
-int Consultar(Arn* T, float valor, point* segmento) {
+int Consultar(Arn* T, float valor, reta* segmento) {
     if( T->raiz[T->ultima_versao] == NULL )
         return 0;
 
@@ -604,7 +608,7 @@ int Consultar(Arn* T, float valor, point* segmento) {
 
     while( x != NIL_PTR ){
         // int key = ((struct SKey*) PegarModificacao(x, KEY, T->ultima_versao))->valor;
-        point* key = ((struct SKey*) PegarModificacao(x, KEY, T->ultima_versao))->valor;
+        reta* key = ((struct SKey*) PegarModificacao(x, KEY, T->ultima_versao))->valor;
 
         // if( valor == key ) {
         if ( calcular_y(valor, segmento) == calcular_y(valor, key) ) {
@@ -613,7 +617,7 @@ int Consultar(Arn* T, float valor, point* segmento) {
         
         no* dir = ((struct SRight*) PegarModificacao(x, RIGHT, T->ultima_versao))->valor;
         // int dirkey = ((struct SKey*) PegarModificacao(dir, KEY, T->ultima_versao))->valor;
-        point* dirkey = ((struct SKey*) PegarModificacao(dir, KEY, T->ultima_versao))->valor;
+        reta* dirkey = ((struct SKey*) PegarModificacao(dir, KEY, T->ultima_versao))->valor;
         no* esq = ((struct SLeft*) PegarModificacao(x, LEFT, T->ultima_versao))->valor;
 
         // if( valor >= dirkey ) {
@@ -628,7 +632,7 @@ int Consultar(Arn* T, float valor, point* segmento) {
     return 0;
 }
 
-int Remover(Arn* T, float valor, point* segmento) {
+int Remover(Arn* T, float valor, reta* segmento) {
     if (Consultar(T, valor, segmento)) {
         T->raiz[T->ultima_versao] = RemoverRecursivo(T->raiz[T->ultima_versao], valor, segmento, T->ultima_versao);
 
@@ -647,6 +651,24 @@ int Remover(Arn* T, float valor, point* segmento) {
     else {
         return 0;
     }
+}
+
+no* Sucessor(Arn* T, float valorX, float valorY, int versao) {
+    struct no* x = T->raiz[versao];
+    struct no* sucessor = NULL;
+
+    while (x != NIL_PTR) {
+        reta* key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
+
+        if ( calcular_y(valorX, key) > valorY ) {
+            sucessor = x;
+            x = ((struct SLeft*) PegarModificacao(x, LEFT, versao))->valor;
+        } else {
+            x = ((struct SRight*) PegarModificacao(x, RIGHT, versao))->valor;
+        }
+    }
+
+    return sucessor;
 }
 
 void PosOrdem(no* x, int nivel, int parent, char* dir) {
@@ -681,7 +703,7 @@ void PreOrdem(no* x, int nivel, float parent, char* d, int versao, float valor) 
         no* esq = ((struct SLeft*) PegarModificacao(x, LEFT, versao))->valor;
         Cor cor = ((struct SCor*) PegarModificacao(x, COR, versao))->valor;
         // int key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
-        point* key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
+        reta* key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
 
         if(cor == RUBRO)
             printf("%f  Vermelho: H(%d) P(%f) (%s) \n", calcular_y(valor, key), nivel, parent, d);
@@ -692,72 +714,6 @@ void PreOrdem(no* x, int nivel, float parent, char* d, int versao, float valor) 
         PreOrdem(dir, nivel+1, calcular_y(valor, key), "->", versao, valor);
     }
 }
-
-/*void testeDePersistencia() {
-    Arn* T = CriarArvore();
-
-    int numeros[15] = {20, 30, 10, 15, 50, 60, 7, 3, 2, 25, 40, 55, 70, 22, 56};
-
-    Incluir(T, numeros[0]);
-    Incluir(T, numeros[1]);
-    Incluir(T, numeros[2]);
-    Incluir(T, numeros[3]);
-    Incluir(T, numeros[4]);
-    Incluir(T, numeros[5]);
-    Incluir(T, numeros[6]);
-    Incluir(T, numeros[7]);
-    Incluir(T, numeros[8]);
-
-    // for (int i = 0; i < 15; i++) {
-    //     Incluir(T, numeros[i]);
-    // }
-
-    // Exibe o resultado
-    // PreOrdem(T->raiz, 0, (int) -INFINITY, "v");
-
-    // printf("------------------------------\n");
-
-    Remover(T, 50);
-    Remover(T, 20);
-    Remover(T, 3);
-    Remover(T, 15);
-    Remover(T, 30);
-    Remover(T, 60);
-
-    // Exibe o resultado
-    printf("---------- 0 -------- \n");
-    PreOrdem(T->raiz[0], 0, (int) -INFINITY, "v", 0);
-    printf("---------- 1 -------- \n");
-    PreOrdem(T->raiz[1], 0, (int) -INFINITY, "v", 1);
-    printf("---------- 2 -------- \n");
-    PreOrdem(T->raiz[2], 0, (int) -INFINITY, "v", 2);
-    printf("---------- 3 -------- \n");
-    PreOrdem(T->raiz[3], 0, (int) -INFINITY, "v", 3);
-    printf("---------- 4 ------- \n");
-    PreOrdem(T->raiz[4], 0, (int) -INFINITY, "v", 4);
-    printf("---------- 5 ------- \n");
-    PreOrdem(T->raiz[5], 0, (int) -INFINITY, "v", 5);
-    printf("---------- 6 ------- \n");
-    PreOrdem(T->raiz[6], 0, (int) -INFINITY, "v", 6);
-    printf("---------- 7 ------- \n");
-    PreOrdem(T->raiz[7], 0, (int) -INFINITY, "v", 7);
-    printf("---------- 8 ------- \n");
-    PreOrdem(T->raiz[8], 0, (int) -INFINITY, "v", 8);
-    printf("---------- 9 ------- \n");
-    PreOrdem(T->raiz[9], 0, (int) -INFINITY, "v", 9);
-    printf("---------- 10 ------- \n");
-    PreOrdem(T->raiz[10], 0, (int) -INFINITY, "v", 10);
-    printf("---------- 11 ------- \n");
-    PreOrdem(T->raiz[11], 0, (int) -INFINITY, "v", 11);
-    printf("---------- 12 ------- \n");
-    PreOrdem(T->raiz[12], 0, (int) -INFINITY, "v", 12);
-    printf("---------- 13 ------- \n");
-    PreOrdem(T->raiz[13], 0, (int) -INFINITY, "v", 13);
-    printf("---------- 14 ------- \n");
-    PreOrdem(T->raiz[14], 0, (int) -INFINITY, "v", 14);
-}*/ 
-
-#define N 5
 
 int comparar(const void *a, const void *b) {
     return (*(int*)a - *(int*)b);
@@ -777,130 +733,107 @@ int remover_duplicatas(int *array, int tamanho) {
     return i + 1;
 }
 
-int main() {
-    // testeDePersistencia();
-    Arn* T = CriarArvore();
+int ContarBloco (FILE *arquivo) {
+    int valor;
+    fscanf(arquivo, "%d", &valor);
+    return valor;
+}
 
-    /*
-    tem y's repetidos devido acho que algum segmento errado
-    */
-    
-    /*
-    point* segmento;
+void LerRetas (FILE *arquivo, linha *retas, int quantidade) {
+    for (int i = 0; i < quantidade; i++) {
+        fscanf(arquivo, "%f,%f %f,%f", &retas[i].p1.x, &retas[i].p1.y, &retas[i].p2.x, &retas[i].p2.y);
+    }
+}
 
-    float pontos[N][4] = {
-        {0, 2, 4, 3},
-        {4, 3, 6, 5},
-        {4, 3, 7, 2},
-        {6, 1, 9, 0},
-        {2, 2, 5, 2}
-    };
+void LerPontos (FILE *arquivo, ponto *pontos, int quantidade) {
+    for (int i = 0; i < quantidade; i++) {
+        fscanf(arquivo, "%f,%f", &pontos[i].x, &pontos[i].y);
+    }
+}
 
-    float x1, y1, x2, y2, m, c;
-
-    for (int i=0; i<=N; i++) {
-        x1 = pontos[i][0];
-        y1 = pontos[i][1];
-        x2 = pontos[i][2];
-        y2 = pontos[i][3];
-
-        m = (y2 - y1) / (x2 - x1);
-        c = y1 - m * x1;
-
-        // printf("%f * x + %f \n", m, c);
-
-        segmento = (point*) malloc(sizeof(point));
-        segmento->x = m;
-        segmento->y = c;
-
-        Incluir(T, 5, segmento);
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        printf("Uso: %s <input_file>\n", argv[0]);
+        return 1;
     }
 
-    PreOrdem(T->raiz[4], 0, (int) -INFINITY, "v", 4, 5);
+    char *input_file_path = argv[1];
+    FILE *arquivo = fopen(input_file_path, "r");
+    FILE *output = fopen("output.txt", "w");
 
-    return 0;
-    */
+    if (arquivo == NULL) {
+        printf("Error opening input file.\n");
+        return 1;
+    }
 
+    int numeroLinhas = ContarBloco(arquivo);
 
+    linha *retas = malloc(numeroLinhas * sizeof(linha));
+    LerRetas(arquivo, retas, numeroLinhas);
 
+    for (int i = 0; i < numeroLinhas; i++) {
+        if (retas[i].p1.x == (int)retas[i].p1.x && retas[i].p1.y == (int)retas[i].p1.y && 
+            retas[i].p2.x == (int)retas[i].p2.x && retas[i].p2.y == (int)retas[i].p2.y) {
+            printf("%.0f,%.0f %.0f,%.0f\n", retas[i].p1.x, retas[i].p1.y, retas[i].p2.x, retas[i].p2.y);
+            fprintf(output, "%.0f,%.0f %.0f,%.0f\n", retas[i].p1.x, retas[i].p1.y, retas[i].p2.x, retas[i].p2.y);
+        } else {
+            printf("%.1f,%.1f %.1f,%.1f\n", retas[i].p1.x, retas[i].p1.y, retas[i].p2.x, retas[i].p2.y);
+            fprintf(output, "%.1f,%.1f %.1f,%.1f\n", retas[i].p1.x, retas[i].p1.y, retas[i].p2.x, retas[i].p2.y);
+        }
+    }
 
+    int numeroPontos = ContarBloco(arquivo);
 
+    printf("%d \n", numeroPontos);
 
+    ponto *pontos = malloc(numeroPontos * sizeof(ponto));
+    LerPontos(arquivo, pontos, numeroPontos);
 
+    for (int i = 0; i < numeroPontos; i++) {
+        if (pontos[i].x == (int)pontos[i].x && pontos[i].y == (int)pontos[i].y) {
+            printf("%.0f,%.0f\n", pontos[i].x, pontos[i].y);
+            fprintf(output, "%.0f,%.0f\n", pontos[i].x, pontos[i].y);
+        } else {
+            printf("%.1f,%.1f\n", pontos[i].x, pontos[i].y);
+            fprintf(output, "%.1f,%.1f\n", pontos[i].x, pontos[i].y);
+        }
+    }
 
+    Arn* T = CriarArvore();
 
+    reta* segmento;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-    point* segmento;
-
-    float pontos[N][4] = {
+    /*float retas[N][4] = {
         {0, 2, 4, 3},
         {4, 3, 6, 5},
         {4, 3, 7, 2},
         {6, 1, 9, 0},
         {2, 2, 5, 2}
-    };
+    };*/
 
-    int tx = N*2;
+    int tx = numeroLinhas*2;
     float* xs = malloc(tx * sizeof(int));
 
-    for (int i=0; i<N; i++) {
-        xs[i] = pontos[i][0];
-        xs[N+i] = pontos[i][2];
+    for (int i=0; i<numeroLinhas; i++) {
+        xs[i] = retas[i].p1.x; // retas[i][0];
+        xs[numeroLinhas+i] = retas[i].p2.x; // retas[i][2];
     }
 
     qsort(xs, tx, sizeof(int), comparar);
 
     tx = remover_duplicatas(xs, tx);
 
-    printf("valores no eixo x \n");
-    for (int i=0; i<tx; i++) {
-        printf("%f \n", xs[i]);
-    }
-
-    printf("--------------------------------------------\n");
-
-    int tamanho = 0;
-    int* vetor = malloc(tamanho * sizeof(int));
-    
-    printf("novas retas \n");
-    
     int nSegments = 0;
     int oldSegments = -1;
-    float vSegmento = pontos[0][0];
-    int intervalo = 1;
+    float vSegmento = retas[0].p1.x; // retas[0][0];
+    int intervalo = 0;
     
     int intervalos[6];
 
-    /*float registrador[N][4] = {
-        { 0.0, 0.0, 0.0, 0.0 },
-        { 0.0, 0.0, 0.0, 0.0 },
-        { 0.0, 0.0, 0.0, 0.0 },
-        { 0.0, 0.0, 0.0, 0.0 },
-        { 0.0, 0.0, 0.0, 0.0 }
-    };*/
-    int rg[] = { 0, 0, 0, 0 };
-
     for (int i=0; i<tx-1; i++) {
-        printf("intervalo %d \n", intervalo);
-
-        for (int j=0; j<N; j++) {
-            float x1 = pontos[j][0];
-            float y1 = pontos[j][1];
-            float x2 = pontos[j][2];
-            float y2 = pontos[j][3];
+        for (int j=0; j<numeroLinhas; j++) {
+            // float x1 = retas[j][0], y1 = retas[j][1], x2 = retas[j][2], y2 = retas[j][3];
+            float x1 = retas[j].p1.x, y1 = retas[j].p1.y, x2 = retas[j].p2.x, y2 = retas[j].p2.y;
 
             float x = ( xs[i] + xs[i+1] )/2;
             float m = (y2 - y1) / (x2 - x1);
@@ -908,101 +841,68 @@ int main() {
             float y = m * x + c;
 
             if ( x1 <= x && x2 >= x ) {
-                rg[j] = 1;
+                if ( vSegmento != x1 ) {
+                    vSegmento = x1;
+                }
 
-                tamanho += 1;
-                vetor = realloc(vetor, tamanho * sizeof(int));
+                segmento = (reta*) malloc(sizeof(reta));
+                segmento->x = m;
+                segmento->y = c;
+                segmento->r = j+1;
 
-                // if ( !(x1 == xs[i] && y1 == y) ) {
-                    if ( vSegmento != x1 ) {
-                        // printf("--------------------------------------------\n");
-                        vSegmento = x1;
-                    }
-
-                    // printf("%f, %f, %f, %f \n", x1, y1, xs[i], y);
-
-                    // pontos[j][0] = x; // xs[i];
-                    // pontos[j][1] = y;
-
-                    segmento = (point*) malloc(sizeof(point));
-                    segmento->x = fixedFloat(m);
-                    segmento->y = fixedFloat(c);
-
-                    // float x =  xs[i]; //( xs[i] + xs[i+1] )/2;
-                    printf("-------------- versão %d (%f) -------------------\n", nSegments, x);
-                    printf("adicionar\n");
-
-                    int code =  Incluir(T, x, segmento);
-                    printf("+ m %f, c %f | %f %f %f %f \n ", segmento->x, segmento->y, x1, x2, y1, y2);
-
-                    PreOrdem(T->raiz[nSegments], 0, (int) -INFINITY, "v", nSegments, x);
-
-                    if (code) {
-                        nSegments += 1;
-                    }
-
-                // }
+                int code = Incluir(T, x, segmento);
             }
             else {
-                rg[j] = 0;
+                segmento = (reta*) malloc(sizeof(reta));
+                segmento->x = m;
+                segmento->y = c;
+                segmento->r = j+1;
 
-                segmento = (point*) malloc(sizeof(point));
-                segmento->x = fixedFloat(m);
-                segmento->y = fixedFloat(c);
-
-                printf("remover\n");
-
-                printf("-------------- versão %d (%f) -------------------\n", nSegments, x);
-                printf("- m %f, c %f \n", segmento->x, segmento->y);
                 int code = Remover(T, x, segmento);
-
-                // if ( oldSegments != nSegments ) {
-                PreOrdem(T->raiz[nSegments], 0, (int) -INFINITY, "v", nSegments, x);
-                // }
-
-                if ( code ) {
-                    nSegments += 1;
-                }
             }
-
-            oldSegments = nSegments;
         }
 
-        // printf("--------------------------------------------\n");
-
-        printf("\n\n segmentos presentes %d %d %d %d %d \n\n", rg[0], rg[1], rg[2], rg[3], rg[4]);
-        // printf("nSegments %f", )
-        intervalos[intervalo - 1] = T->ultima_versao-1;
+        intervalos[intervalo] = T->ultima_versao-1;
         intervalo += 1;
-
-        /*tamanho += 1;
-        vetor = realloc(vetor, tamanho * sizeof(int));
-
-        vetor[tamanho-1] = 0;*/
     }
 
-    printf("%d, %d, %d, %d, %d, %d \n", intervalos[0], intervalos[1], intervalos[2], intervalos[3], intervalos[4], intervalos[5]);
+    /*float pontos[N][2] = {
+        {1,1},
+        {3,1},
+        {5,3},
+        {7,0},
+        {6,2}
+    };*/
 
-    for (int i=0; i<6; i++) {
-        float x = (xs[i] + xs[i+1])/2;
-        printf("-------------------  intervalo %d -----------------------\n", i + 1);
+    printf("\n");
+    fprintf(output, "\n");
 
-        PreOrdem(T->raiz[intervalos[i]], 0, (int) -INFINITY, "v", intervalos[i], x);
+    for (int i=0; i<numeroPontos; i++) {
+        int intervaloAtual = 0;
+        float xAtual = xs[0];
+        float x1 = pontos[i].x; // pontos[i][0];
+        float y1 = pontos[i].y; // pontos[i][1];
+
+        int idx = 0; 
+        while (x1 >= xs[idx+1]) {
+            idx += 1;
+        }
+
+        no* sucessor = Sucessor(T, x1, y1, intervalos[idx]);
+        printf("%d \n", sucessor->key->r);
+        fprintf(output, "%d \n", sucessor->key->r);
     }
-
-    /*int tamanho = 0;
-    int* vetor = malloc(tamanho * sizeof(int));
     
-    for (int i=0; i<5; i++) {
-        tamanho += 1;
-        vetor = realloc(vetor, tamanho * sizeof(int));
-
-        vetor[tamanho-1] = 0;
-    }
-
-    for (int i=0; i<5; i++) {
-        printf("%d \n", vetor[i]);
-    }*/
-
     return 0;
+
+    /*
+    rever onde eu faço essa verificação, tava dando erro
+    // if ( esq_esq != NIL_PTR ) {
+        esq_esqCor = ((struct SCor*) PegarModificacao(esq_esq, COR, versao))->valor;
+    // }
+
+    float ou double?
+
+    deu certo para entrada atual, mas não deu para a antiga
+    */
 }
