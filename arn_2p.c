@@ -373,32 +373,37 @@ no* IncluirRecursivo(no* x, float valor, reta* segmento, int versao) {
     esqCor = ((struct SCor*) PegarModificacao(esq, COR, versao))->valor;
     Cor esq_esqCor;
 
-    if ( esq_esq != NIL_PTR ) {
+    // if ( esq_esq != NIL_PTR ) {
+    if ( esq != NIL_PTR ) {
         esq_esqCor = ((struct SCor*) PegarModificacao(esq_esq, COR, versao))->valor;
     }
 
-    if ( esqCor == RUBRO && esq_esq != NIL_PTR && esq_esqCor == RUBRO ) {
+    // if ( esqCor == RUBRO && esq_esq != NIL_PTR && esq_esqCor == RUBRO ) {
+    if ( esq != NIL_PTR && esqCor == RUBRO && esq_esqCor == RUBRO ) {
         x = RotacaoDIR(x, versao);
     }
 
     // se 2 filhos vermelhos trocam-se as cores
     if ( x != NIL_PTR ) {
         dir = ((struct SRight*) PegarModificacao(x, RIGHT, versao))->valor;
+        dirCor = ((struct SCor*) PegarModificacao(dir, COR, versao))->valor;
     }
 
     if ( x != NIL_PTR ) { 
         esq = ((struct SLeft*) PegarModificacao(x, LEFT, versao))->valor;
-    }
-    
-    if ( dir != NIL_PTR ) {
-        dirCor = ((struct SCor*) PegarModificacao(dir, COR, versao))->valor;
-    }
-
-    if ( esq != NIL_PTR ) {
         esqCor = ((struct SCor*) PegarModificacao(esq, COR, versao))->valor;
     }
+    
+    // if ( dir != NIL_PTR ) {
+    //    dirCor = ((struct SCor*) PegarModificacao(dir, COR, versao))->valor;
+    // }
 
-    if ( x != NIL_PTR && esq != NIL_PTR && esqCor == RUBRO && dir != NIL_PTR && dirCor == RUBRO ) {
+    // if ( esq != NIL_PTR ) {
+    //    esqCor = ((struct SCor*) PegarModificacao(esq, COR, versao))->valor;
+    // }
+
+    // if ( x != NIL_PTR && esq != NIL_PTR && esqCor == RUBRO && dir != NIL_PTR && dirCor == RUBRO ) {
+    if ( x != NIL_PTR && esqCor == RUBRO && dirCor == RUBRO ) {
         x = TrocarCor(x, versao);
     }
 
@@ -440,11 +445,13 @@ no* Balancear(no* x, int versao) {
     no* esq_esq = ((struct SLeft*) PegarModificacao(esq, LEFT, versao))->valor;
     Cor esq_esqCor;
 
-    if ( esq != NIL_PTR && esq_esq != NIL_PTR ) {
+    // if ( esq != NIL_PTR && esq_esq != NIL_PTR ) {
+    if ( esq != NIL_PTR ) {
         esq_esqCor = ((struct SCor*) PegarModificacao(esq_esq, COR, versao))->valor;
     }
 
-    if ( esq != NIL_PTR && esqCor == RUBRO && esq_esq != NIL_PTR && esq_esqCor == RUBRO ) {
+    // if ( esq != NIL_PTR && esqCor == RUBRO && esq_esq != NIL_PTR && esq_esqCor == RUBRO ) {
+    if ( esq != NIL_PTR && esqCor == RUBRO && esq_esqCor == RUBRO ) {
         x = RotacaoDIR(x, versao);
     }
 
@@ -474,7 +481,8 @@ no* RemoverMenor(no* x, int versao) {
     no* esq_esq = ((struct SLeft*) PegarModificacao(esq, LEFT, versao))->valor;
     Cor esq_esqCor;
 
-    if ( esq_esq != NIL_PTR ) {
+    // if ( esq_esq != NIL_PTR ) {
+    if ( esq != NIL_PTR ) {
         esq_esqCor = ((struct SCor*) PegarModificacao(esq_esq, COR, versao))->valor;
     }
 
@@ -519,8 +527,9 @@ no* RemoverRecursivo(no* x, float valor, reta* segmento, int versao) {
         Cor esq_esqCor;
 
         // if ( esq_esq != NIL_PTR ) {
-        esq_esqCor = ((struct SCor*) PegarModificacao(esq_esq, COR, versao))->valor;
-        // }
+        if ( esq != NIL_PTR ) {
+            esq_esqCor = ((struct SCor*) PegarModificacao(esq_esq, COR, versao))->valor;
+        }
 
         if ( esqCor == NEGRO && esq_esqCor == NEGRO ) {
             x = MoverEsquerda(x, versao);
@@ -752,9 +761,19 @@ void LerPontos (FILE *arquivo, ponto *pontos, int quantidade) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
+    int enable_debug = 0;
+    
+    if (argc != 2 && argc != 3) {
         printf("Uso: %s <input_file>\n", argv[0]);
         return 1;
+    }
+
+    if (argc == 3) {
+        char *char_debug = argv[2];
+        enable_debug = atoi(char_debug);
+        if ( enable_debug ) {
+            printf("debug %d \n", enable_debug);
+        }
     }
 
     char *input_file_path = argv[1];
@@ -767,6 +786,9 @@ int main(int argc, char *argv[]) {
     }
 
     int numeroLinhas = ContarBloco(arquivo);
+
+    printf("%d \n", numeroLinhas);
+    fprintf(output, "%d \n", numeroLinhas);
 
     linha *retas = malloc(numeroLinhas * sizeof(linha));
     LerRetas(arquivo, retas, numeroLinhas);
@@ -785,6 +807,7 @@ int main(int argc, char *argv[]) {
     int numeroPontos = ContarBloco(arquivo);
 
     printf("%d \n", numeroPontos);
+    fprintf(output, "%d \n", numeroPontos);
 
     ponto *pontos = malloc(numeroPontos * sizeof(ponto));
     LerPontos(arquivo, pontos, numeroPontos);
@@ -829,8 +852,22 @@ int main(int argc, char *argv[]) {
     int intervalo = 0;
     
     int intervalos[6];
+    int *rg = (int *)malloc(numeroLinhas * sizeof(int));
+
+    for (int i = 0; i < numeroLinhas; i++) {
+        rg[i] = 0;
+    }
+
+    if ( enable_debug ) {
+        printf("\n");
+        printf("novas retas \n");
+    }
 
     for (int i=0; i<tx-1; i++) {
+        if ( enable_debug ) {
+            printf("intervalo %d \n", intervalo);
+        }
+
         for (int j=0; j<numeroLinhas; j++) {
             // float x1 = retas[j][0], y1 = retas[j][1], x2 = retas[j][2], y2 = retas[j][3];
             float x1 = retas[j].p1.x, y1 = retas[j].p1.y, x2 = retas[j].p2.x, y2 = retas[j].p2.y;
@@ -841,6 +878,8 @@ int main(int argc, char *argv[]) {
             float y = m * x + c;
 
             if ( x1 <= x && x2 >= x ) {
+                rg[j] = 1;
+
                 if ( vSegmento != x1 ) {
                     vSegmento = x1;
                 }
@@ -851,19 +890,62 @@ int main(int argc, char *argv[]) {
                 segmento->r = j+1;
 
                 int code = Incluir(T, x, segmento);
+
+                if ( enable_debug ) {
+                    printf("-------------- versão %d (%f) -------------------\n", nSegments, x);
+                    printf("adicionar\n");
+                    printf("+ m %f, c %f | %f %f %f %f \n ", segmento->x, segmento->y, x1, x2, y1, y2);
+                    PreOrdem(T->raiz[nSegments], 0, (int) -INFINITY, "v", nSegments, x);
+                }
+
+                if (code) {
+                    nSegments += 1;
+                }
             }
             else {
+                rg[j] = 0;
+
                 segmento = (reta*) malloc(sizeof(reta));
                 segmento->x = m;
                 segmento->y = c;
                 segmento->r = j+1;
 
                 int code = Remover(T, x, segmento);
+
+                if ( enable_debug ) {
+                    printf("-------------- versão %d (%f) -------------------\n", nSegments, x);
+                    printf("remover\n");
+                    printf("- m %f, c %f | %f %f %f %f \n ", segmento->x, segmento->y, x1, x2, y1, y2);
+                    PreOrdem(T->raiz[nSegments], 0, (int) -INFINITY, "v", nSegments, x);
+                }
+
+                if ( code ) {
+                    nSegments += 1;
+                }
             }
+        }
+
+        if ( enable_debug ) {
+            printf("\n\nSegmentos presentes: ");
+            for (int i = 0; i < numeroLinhas; ++i) {
+                printf("%d ", rg[i]);
+            }
+            printf("\n\n");
         }
 
         intervalos[intervalo] = T->ultima_versao-1;
         intervalo += 1;
+    }
+
+    if ( enable_debug ) {
+        printf("%d, %d, %d, %d \n", intervalos[0], intervalos[1], intervalos[2], intervalos[3]);
+
+        for (int i=0; i<4; i++) {
+            float x = (xs[i] + xs[i+1])/2;
+            printf("-------------------  intervalo %d -----------------------\n", i + 1);
+
+            PreOrdem(T->raiz[intervalos[i]], 0, (int) -INFINITY, "v", intervalos[i], x);
+        }
     }
 
     /*float pontos[N][2] = {
