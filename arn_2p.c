@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "arn_2p.h"
 
-#define MAX_OP 20
+#define MAX_OP 100
 #define MAX_QM 2
 
 struct ponto {
@@ -664,7 +664,7 @@ int Remover(Arn* T, float valor, reta* segmento) {
 
 no* Sucessor(Arn* T, float valorX, float valorY, int versao) {
     struct no* x = T->raiz[versao];
-    struct no* sucessor = NULL;
+    struct no* sucessor = NIL_PTR;
 
     while (x != NIL_PTR) {
         reta* key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
@@ -765,7 +765,7 @@ int main(int argc, char *argv[]) {
     
     if (argc != 2 && argc != 3) {
         printf("Uso: %s <input_file>\n", argv[0]);
-        return 1;
+        // return 1;
     }
 
     if (argc == 3) {
@@ -851,8 +851,9 @@ int main(int argc, char *argv[]) {
     float vSegmento = retas[0].p1.x; // retas[0][0];
     int intervalo = 0;
     
-    int intervalos[6];
-    int *rg = (int *)malloc(numeroLinhas * sizeof(int));
+    // int intervalos[6];
+    int *intervalos = (int*) malloc((tx-1) * sizeof(int));
+    int *rg = (int*) malloc(numeroLinhas * sizeof(int));
 
     for (int i = 0; i < numeroLinhas; i++) {
         rg[i] = 0;
@@ -865,7 +866,7 @@ int main(int argc, char *argv[]) {
 
     for (int i=0; i<tx-1; i++) {
         if ( enable_debug ) {
-            printf("intervalo %d \n", intervalo);
+            printf("intervalo %d \n", i);
         }
 
         for (int j=0; j<numeroLinhas; j++) {
@@ -910,17 +911,49 @@ int main(int argc, char *argv[]) {
                 segmento->y = c;
                 segmento->r = j+1;
 
-                int code = Remover(T, x, segmento);
+                int foundedSameAngle = 0;
 
-                if ( enable_debug ) {
-                    printf("-------------- versão %d (%f) -------------------\n", nSegments, x);
-                    printf("remover\n");
-                    printf("- m %f, c %f | %f %f %f %f \n ", segmento->x, segmento->y, x1, x2, y1, y2);
-                    PreOrdem(T->raiz[nSegments], 0, (int) -INFINITY, "v", nSegments, x);
+                for ( int k=0; k<numeroLinhas; k++ ) {
+                    float j_x1 = retas[j].p1.x, j_y1 = retas[j].p1.y, j_x2 = retas[j].p2.x, j_y2 = retas[j].p2.y;
+
+                    float j_x = ( xs[i] + xs[i+1] )/2;
+                    float j_m = ( j_y2 - j_y1) / ( j_x2 - j_x1);
+                    float j_c = j_y1 - m * j_x1;
+                    float j_y = m * x + c;
+
+                    float k_x1 = retas[k].p1.x, k_y1 = retas[k].p1.y, k_x2 = retas[k].p2.x, k_y2 = retas[k].p2.y;
+
+                    float k_x = ( xs[i] + xs[i+1] )/2;
+                    float k_m = ( k_y2 - k_y1) / ( k_x2 - k_x1);
+                    float k_c = k_y1 - m * k_x1;
+                    float k_y = k_m * k_x + k_c;
+
+                    if ( j_y == k_y && j != k && ( k_x1 <= x && k_x2 >= x ) && k < j ) {
+                        foundedSameAngle = 1;
+                    }
                 }
+                
+                if ( foundedSameAngle == 0 ) {
+                    int code = Remover(T, x, segmento);
 
-                if ( code ) {
-                    nSegments += 1;
+                    if ( enable_debug ) {
+                        printf("-------------- versão %d (%f) -------------------\n", nSegments, x);
+                        printf("remover\n");
+                        printf("- m %f, c %f | %f %f %f %f \n ", segmento->x, segmento->y, x1, x2, y1, y2);
+                        PreOrdem(T->raiz[nSegments], 0, (int) -INFINITY, "v", nSegments, x);
+                    }
+
+                    if ( code ) {
+                        nSegments += 1;
+                    }
+                }
+                else {
+                    if ( enable_debug ) {
+                        printf("-------------- versão %d (%f) -------------------\n", nSegments, x);
+                        printf("remover\n");
+                        printf("- m %f, c %f | %f %f %f %f \n ", segmento->x, segmento->y, x1, x2, y1, y2);
+                        PreOrdem(T->raiz[nSegments], 0, (int) -INFINITY, "v", nSegments, x);
+                    }
                 }
             }
         }
@@ -933,14 +966,16 @@ int main(int argc, char *argv[]) {
             printf("\n\n");
         }
 
-        intervalos[intervalo] = T->ultima_versao-1;
-        intervalo += 1;
+        intervalos[i] = T->ultima_versao-1;
     }
 
     if ( enable_debug ) {
-        printf("%d, %d, %d, %d \n", intervalos[0], intervalos[1], intervalos[2], intervalos[3]);
+        for (int i=0; i<tx-1; i++) {
+            printf("%d, ", intervalos[i]);
+        }
+        printf("\n");
 
-        for (int i=0; i<4; i++) {
+        for (int i=0; i<tx-1; i++) {
             float x = (xs[i] + xs[i+1])/2;
             printf("-------------------  intervalo %d -----------------------\n", i + 1);
 
@@ -971,10 +1006,17 @@ int main(int argc, char *argv[]) {
         }
 
         no* sucessor = Sucessor(T, x1, y1, intervalos[idx]);
-        printf("%d \n", sucessor->key->r);
-        fprintf(output, "%d \n", sucessor->key->r);
+        
+        if ( sucessor != NIL_PTR ) {
+            printf("%d \n", sucessor->key->r);
+            fprintf(output, "%d \n", sucessor->key->r);
+        }
+        else {
+            printf("%d \n", -1);
+            fprintf(output, "%d \n", -1);
+        }
     }
-    
+
     return 0;
 
     /*
