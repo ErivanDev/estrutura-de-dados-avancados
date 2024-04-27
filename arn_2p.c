@@ -3,9 +3,15 @@
 #include <stdlib.h>
 #include "arn_2p.h"
 
-#define MAX_OP 100
-#define MAX_QM 2
+// Definindo constantes
+#define MAX_OP 100 // <- número máximo de versões
+#define MAX_QM 2 // <- número máximo de modificações por nó
 
+///////////////////////////////////////////////////
+/////// RESOLUCAO DO PROBLEMA DE LOCALIZACAO //////
+///////////////////////////////////////////////////
+
+// Definindo estruturas para representar pontos, linhas e retas 
 struct ponto {
     float x;
     float y;
@@ -23,25 +29,74 @@ struct reta
     int r;
 };
 
-/////// PERSISTENCIA //////
+// Função para calcular a coordenada y em uma reta dado um valor de x
+float Calcular_y(float x, reta* r1) {
+    return r1->x * x + r1->y;
+}
 
+// Função de comparação para ser usada na ordenação de um array
+int Comparar(const void *a, const void *b) {
+    return (*(int*)a - *(int*)b);
+}
+
+// Função para remover duplicatas de um array e retornar o novo tamanho
+int Remover_Duplicatas(int *array, int tamanho) {
+    int i, j;
+    if (tamanho == 0 || tamanho == 1)
+        return tamanho;
+
+    for (i = 0, j = 1; j < tamanho; j++) {
+        if (array[j] != array[i]) {
+            i++;
+            array[i] = array[j];
+        }
+    }
+    return i + 1;
+}
+
+// Função para contar o número de blocos em um arquivo
+int ContarBloco(FILE *arquivo) {
+    int valor;
+    fscanf(arquivo, "%d", &valor);
+    return valor;
+}
+
+// Função para ler as retas de um arquivo e armazená-las em um array
+void LerRetas(FILE *arquivo, linha *retas, int quantidade) {
+    for (int i = 0; i < quantidade; i++) {
+        fscanf(arquivo, "%f,%f %f,%f", &retas[i].p1.x, &retas[i].p1.y, &retas[i].p2.x, &retas[i].p2.y);
+    }
+}
+
+// Função para ler os pontos de um arquivo e armazená-los em um array
+void LerPontos (FILE *arquivo, ponto *pontos, int quantidade) {
+    for (int i = 0; i < quantidade; i++) {
+        fscanf(arquivo, "%f,%f", &pontos[i].x, &pontos[i].y);
+    }
+}
+
+///////////////////////////////////////////////////
+/////////////////// PERSISTENCIA //////////////////
+///////////////////////////////////////////////////
+
+// Definindo estruturas para representar modificações em nós da árvore
 struct SKey { reta* valor; };
 struct SLeft { no* valor; };
 struct SRight { no* valor; };
 struct SCor { Cor valor; };
 
+// Estrutura para representar uma modificação
 typedef struct {
     int versao;
     Tipo tipo;
     void *ref;
 } Mod;
 
-///////////////////////////
+///////////////////////////////////////////////////
+///// ARVORE RUBRO-NEGRA CAIDA PARA A ESQUERDA ////
+///////////////////////////////////////////////////
 
-float calcular_y(float x, reta* r1) {
-    return r1->x * x + r1->y;
-}
-
+// Estrutura para representar um nó da árvore
 struct no {
     struct reta*  key;
     struct no*     esq;
@@ -52,21 +107,25 @@ struct no {
     int            qmods;
 };
 
+// Estrutura para representar uma árvore
 struct Arn {
     struct no* raiz[MAX_OP];
 
     int ultima_versao;
 };
 
+// Nó NIL, utilizado para representar um nó nulo
 no NIL_NO;
 no* NIL_PTR = &NIL_NO;
 
+// Função para criar uma árvore rubro-negra
 Arn* CriarArvore() {
     Arn* T = (Arn*) malloc(sizeof(Arn));
     T->raiz[0] = NIL_PTR;
     return T;
 }
 
+// Função para criar um novo nó
 no* CriarNo(reta* segmento) {
     no* z = (no*) malloc(sizeof(no));
 
@@ -79,13 +138,13 @@ no* CriarNo(reta* segmento) {
     return z;
 }
 
+// Função para criar uma referência de acordo com o tipo
 void* CriarReferencia(Tipo tipo, void* valor) {
     void* ref = NULL;
 
     switch (tipo) {
         case KEY:   
             struct SKey* skey = (struct SKey*) malloc(sizeof(struct SKey));
-            // skey->valor = (int) valor;
             skey->valor = (reta*) valor;
             
             ref = (void* ) skey;
@@ -116,6 +175,7 @@ void* CriarReferencia(Tipo tipo, void* valor) {
     return ref;
 }
 
+// Função para pegar uma modificacao de acordo com o tipo
 void* PegarModificacao(no* z, Tipo tipo, int versao) {
     int i = 0;
     int modLen = sizeof(z->mod) / sizeof(z->mod[0]);
@@ -140,16 +200,14 @@ void* PegarModificacao(no* z, Tipo tipo, int versao) {
     return ref;
 }
 
+// Função para trocar a cor de um nó
 no* TrocarCor(no* x, int versao) {
-    // x->cor = !x->cor;
     Cor cor = ((struct SCor*) PegarModificacao(x, COR, versao))->valor;
     x = SalvarModificacao(x, COR, versao, (void*) !cor);
     
     no* x_esq = ((struct SLeft*) PegarModificacao(x, LEFT, versao))->valor;
 
     if (x_esq != NIL_PTR) {
-        // x->esq->cor = !x->esq->cor;
-
         Cor x_esq_cor = ((struct SCor*) PegarModificacao(x_esq, COR, versao))->valor;
         no* new_x_esq = SalvarModificacao(x_esq, COR, versao, (void*) !x_esq_cor);
 
@@ -161,8 +219,6 @@ no* TrocarCor(no* x, int versao) {
     no* x_dir = ((struct SRight*) PegarModificacao(x, RIGHT, versao))->valor;
     
     if (x_dir != NIL_PTR) {
-        // x->dir->cor = !x->dir->cor;
-
         Cor x_dir_cor = ((struct SCor*) PegarModificacao(x_dir, COR, versao))->valor;
         no* new_x_dir = SalvarModificacao(x_dir, COR, versao, (void*) !x_dir_cor);
 
@@ -174,14 +230,8 @@ no* TrocarCor(no* x, int versao) {
     return x;
 }
 
+// Função para realizar uma rotação à esquerda em um nó
 no* RotacaoESQ(no* x, int versao) {
-    // no* z = x->dir;
-
-    // x->dir = z->esq;
-    // z->esq = x;
-    // z->cor = x->cor;
-    // x->cor = RUBRO;
-
     no* z = ((struct SRight*) PegarModificacao(x, RIGHT, versao))->valor;
     no* z_esq = ((struct SLeft*) PegarModificacao(z, LEFT, versao))->valor;
 
@@ -202,14 +252,8 @@ no* RotacaoESQ(no* x, int versao) {
     return z;
 }
 
+// Função para realizar uma rotação à direita em um nó
 no* RotacaoDIR(no* x, int versao) {
-    // no* z = x->esq;
-
-    // x->esq = z->dir;
-    // z->dir = x;
-    // z->cor = x->cor;
-    // x->cor = RUBRO;
-
     no* z = ((struct SLeft*) PegarModificacao(x, LEFT, versao))->valor;
     no* z_dir = ((struct SLeft*) PegarModificacao(z, RIGHT, versao))->valor;
 
@@ -230,6 +274,7 @@ no* RotacaoDIR(no* x, int versao) {
     return z;
 }
 
+// Função para mover o nó para a esquerda
 no* MoverEsquerda(no* x, int versao) {
     x = TrocarCor(x, versao);
 
@@ -239,8 +284,6 @@ no* MoverEsquerda(no* x, int versao) {
     Cor dir_esqCor = ((struct SCor*) PegarModificacao(dir_esq, COR, versao))->valor;
 
     if ( dir_esqCor == RUBRO ) {
-        // x->dir = RotacaoDIR(x->dir, versao);
-
         no* oldDir = ((struct SRight*) PegarModificacao(x, RIGHT, versao))->valor;
         no* newDir = RotacaoDIR(oldDir, versao);
 
@@ -255,6 +298,7 @@ no* MoverEsquerda(no* x, int versao) {
     return x;
 }
 
+// Função para mover o nó para a direita
 no* MoverDireita(no* x, int versao) {
     x = TrocarCor(x, versao);
 
@@ -271,6 +315,7 @@ no* MoverDireita(no* x, int versao) {
     return x;
 }
 
+// Função para salvar uma modificação
 no* SalvarModificacao(no* z, Tipo tipo, int versao, void* valor) {
     if ( z->qmods < MAX_QM ) {
         z->mod[z->qmods] = (Mod*) malloc(sizeof(Mod));
@@ -286,7 +331,6 @@ no* SalvarModificacao(no* z, Tipo tipo, int versao, void* valor) {
         // Cria copia
         no* y = CriarNo(NULL);
 
-        // int key = ((struct SKey*) PegarModificacao(z, KEY, versao))->valor;
         reta* key = ((struct SKey*) PegarModificacao(z, KEY, versao))->valor;
         no* dir = ((struct SRight*) PegarModificacao(z, RIGHT, versao))->valor;
         no* esq = ((struct SLeft*) PegarModificacao(z, LEFT, versao))->valor;
@@ -313,7 +357,7 @@ no* SalvarModificacao(no* z, Tipo tipo, int versao, void* valor) {
     return z;
 }
 
-// no* IncluirRecursivo(no* x, int valor, int versao) {
+// Função auxiliar para incluir um nó na arvore rubro-negra
 no* IncluirRecursivo(no* x, float valor, reta* segmento, int versao) {
     if (x == NIL_PTR) {
         no* z = CriarNo(segmento);
@@ -321,18 +365,16 @@ no* IncluirRecursivo(no* x, float valor, reta* segmento, int versao) {
         return z;
     }
     
-    // int key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
     reta* key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
-    // if (valor < key) {
-    float k1 = calcular_y(valor, segmento);
-    float k2 = calcular_y(valor, key);
+    
+    float k1 = Calcular_y(valor, segmento);
+    float k2 = Calcular_y(valor, key);
 
     if ( k1 == k2 ) {
         return x;
     }
 
     if ( k1 < k2 ) {
-        // no* oldEsq = x->esq;
         no* oldEsq = ((struct SLeft*) PegarModificacao(x, LEFT, versao))->valor;
         no* newEsq = IncluirRecursivo(oldEsq, valor, segmento, versao);
 
@@ -343,12 +385,10 @@ no* IncluirRecursivo(no* x, float valor, reta* segmento, int versao) {
 
     key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
 
-    k1 = calcular_y(valor, segmento);
-    k2 = calcular_y(valor, key);
+    k1 = Calcular_y(valor, segmento);
+    k2 = Calcular_y(valor, key);
 
-    // if (valor > key) {
     if ( k1 > k2 ) {
-        // no* oldDir = x->dir;
         no* oldDir = ((struct SRight*) PegarModificacao(x, RIGHT, versao))->valor;
         no* newDir = IncluirRecursivo(oldDir, valor, segmento, versao);
 
@@ -373,12 +413,10 @@ no* IncluirRecursivo(no* x, float valor, reta* segmento, int versao) {
     esqCor = ((struct SCor*) PegarModificacao(esq, COR, versao))->valor;
     Cor esq_esqCor;
 
-    // if ( esq_esq != NIL_PTR ) {
     if ( esq != NIL_PTR ) {
         esq_esqCor = ((struct SCor*) PegarModificacao(esq_esq, COR, versao))->valor;
     }
 
-    // if ( esqCor == RUBRO && esq_esq != NIL_PTR && esq_esqCor == RUBRO ) {
     if ( esq != NIL_PTR && esqCor == RUBRO && esq_esqCor == RUBRO ) {
         x = RotacaoDIR(x, versao);
     }
@@ -394,15 +432,6 @@ no* IncluirRecursivo(no* x, float valor, reta* segmento, int versao) {
         esqCor = ((struct SCor*) PegarModificacao(esq, COR, versao))->valor;
     }
     
-    // if ( dir != NIL_PTR ) {
-    //    dirCor = ((struct SCor*) PegarModificacao(dir, COR, versao))->valor;
-    // }
-
-    // if ( esq != NIL_PTR ) {
-    //    esqCor = ((struct SCor*) PegarModificacao(esq, COR, versao))->valor;
-    // }
-
-    // if ( x != NIL_PTR && esq != NIL_PTR && esqCor == RUBRO && dir != NIL_PTR && dirCor == RUBRO ) {
     if ( x != NIL_PTR && esqCor == RUBRO && dirCor == RUBRO ) {
         x = TrocarCor(x, versao);
     }
@@ -410,13 +439,12 @@ no* IncluirRecursivo(no* x, float valor, reta* segmento, int versao) {
     return x;
 }
 
+// Função para incluir um nó em uma árvore rubro-negra
 int Incluir(Arn* T, float valor, reta* segmento) {
     if (!Consultar(T, valor, segmento)) {
         T->raiz[T->ultima_versao] = IncluirRecursivo(T->raiz[T->ultima_versao], valor, segmento, T->ultima_versao);
 
         if ( T->raiz[T->ultima_versao] != NIL_PTR ) {
-            // T->raiz[T->ultima_versao]->cor = NEGRO;
-
             T->raiz[T->ultima_versao] = SalvarModificacao(T->raiz[T->ultima_versao], COR, T->ultima_versao, (void*) NEGRO);
         }
 
@@ -430,6 +458,7 @@ int Incluir(Arn* T, float valor, reta* segmento) {
     }
 }
 
+// Função para balancear uma árvore rubro-negra
 no* Balancear(no* x, int versao) {
     // nó vermelho sempre é o filho a esquerda, porque aqui se trata de uma left-leaning red–black tree
     no* dir = ((struct SRight*) PegarModificacao(x, RIGHT, versao))->valor;
@@ -445,12 +474,10 @@ no* Balancear(no* x, int versao) {
     no* esq_esq = ((struct SLeft*) PegarModificacao(esq, LEFT, versao))->valor;
     Cor esq_esqCor;
 
-    // if ( esq != NIL_PTR && esq_esq != NIL_PTR ) {
     if ( esq != NIL_PTR ) {
         esq_esqCor = ((struct SCor*) PegarModificacao(esq_esq, COR, versao))->valor;
     }
 
-    // if ( esq != NIL_PTR && esqCor == RUBRO && esq_esq != NIL_PTR && esq_esqCor == RUBRO ) {
     if ( esq != NIL_PTR && esqCor == RUBRO && esq_esqCor == RUBRO ) {
         x = RotacaoDIR(x, versao);
     }
@@ -468,11 +495,11 @@ no* Balancear(no* x, int versao) {
     return x;
 }
 
+// Função para remover o menor nó árvore rubro-negra
 no* RemoverMenor(no* x, int versao) {
     no* esq = ((struct SLeft*) PegarModificacao(x, LEFT, versao))->valor;
 
     if ( esq == NIL_PTR ) {
-        // free(x);
         return NIL_PTR;
     }
 
@@ -481,7 +508,6 @@ no* RemoverMenor(no* x, int versao) {
     no* esq_esq = ((struct SLeft*) PegarModificacao(esq, LEFT, versao))->valor;
     Cor esq_esqCor;
 
-    // if ( esq_esq != NIL_PTR ) {
     if ( esq != NIL_PTR ) {
         esq_esqCor = ((struct SCor*) PegarModificacao(esq_esq, COR, versao))->valor;
     }
@@ -489,8 +515,6 @@ no* RemoverMenor(no* x, int versao) {
     if ( esqCor == NEGRO && esq_esqCor == NEGRO ) {
         x = MoverEsquerda(x, versao);
     }
-
-    // x->esq = RemoverMenor(x->esq, versao);
 
     no* oldEsq = ((struct SLeft*) PegarModificacao(x, LEFT, versao))->valor;
     no* newEsq = RemoverMenor(oldEsq, versao);
@@ -502,31 +526,29 @@ no* RemoverMenor(no* x, int versao) {
     return Balancear(x, versao);
 }
 
+// Função para procurar o menor nó em uma sub-arvore da arvore rubro-negra
 no* ProcurarMenor(no* x, int versao) {
     no* z = x;
-    // no* y = x->esq;
     no* y = ((struct SLeft*) PegarModificacao(x, LEFT, versao))->valor;
 
     while ( y != NIL_PTR ) {
         z = y;
-        // y = y->esq;
         y = ((struct SLeft*) PegarModificacao(y, LEFT, versao))->valor;
     }
     
     return z;
 }
 
+// Função auxiliar para remover um nó da arvore rubro-negra
 no* RemoverRecursivo(no* x, float valor, reta* segmento, int versao) {
-    // int key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
     reta* key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
-    // if ( valor < key ) {
-    if ( calcular_y(valor, segmento) < calcular_y(valor, key) ) {
+    
+    if ( Calcular_y(valor, segmento) < Calcular_y(valor, key) ) {
         no* esq = ((struct SLeft*) PegarModificacao(x, LEFT, versao))->valor;
         no* esq_esq = ((struct SLeft*) PegarModificacao(esq, LEFT, versao))->valor;
         Cor esqCor = ((struct SCor*) PegarModificacao(esq, COR, versao))->valor;
         Cor esq_esqCor;
 
-        // if ( esq_esq != NIL_PTR ) {
         if ( esq != NIL_PTR ) {
             esq_esqCor = ((struct SCor*) PegarModificacao(esq_esq, COR, versao))->valor;
         }
@@ -535,7 +557,6 @@ no* RemoverRecursivo(no* x, float valor, reta* segmento, int versao) {
             x = MoverEsquerda(x, versao);
         }
 
-        // x->esq = RemoverRecursivo(x->esq, valor, versao);
         no* oldEsq = ((struct SLeft*) PegarModificacao(x, LEFT, versao))->valor;
         no* newEsq = RemoverRecursivo(oldEsq, valor, segmento, versao);
 
@@ -551,13 +572,10 @@ no* RemoverRecursivo(no* x, float valor, reta* segmento, int versao) {
             x = RotacaoDIR(x, versao);
         }
 
-        // int key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
         reta* key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
         no* dir = ((struct SRight*) PegarModificacao(x, RIGHT, versao))->valor;
         
-        // if ( key == valor && dir == NIL_PTR ) {
-        if ( calcular_y(valor, segmento) == calcular_y(valor, key) && dir == NIL_PTR ) {
-            // free(x);
+        if ( Calcular_y(valor, segmento) == Calcular_y(valor, key) && dir == NIL_PTR ) {
             return NIL_PTR;
         }
 
@@ -573,19 +591,15 @@ no* RemoverRecursivo(no* x, float valor, reta* segmento, int versao) {
         key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
         dir = ((struct SRight*) PegarModificacao(x, RIGHT, versao))->valor;
 
-        // if ( key == valor ) {
-        if ( calcular_y(valor, segmento) == calcular_y(valor, key) ) {
+        if ( Calcular_y(valor, segmento) == Calcular_y(valor, key) ) {
             // copia o menor
             no* y = ProcurarMenor(dir, versao);
-            // int yKey = ((struct SKey*) PegarModificacao(y, KEY, versao))->valor;
+
             reta* yKey = ((struct SKey*) PegarModificacao(y, KEY, versao))->valor;
             
-            // x->key = y->key;
             x = SalvarModificacao(x, KEY, versao, yKey);
             
             // remove o menor
-            // x->dir = RemoverMenor(dir, versao);
-
             no* oldDir = ((struct SRight*) PegarModificacao(x, RIGHT, versao))->valor;
             no* newDir = RemoverMenor(oldDir, versao);
 
@@ -594,8 +608,6 @@ no* RemoverRecursivo(no* x, float valor, reta* segmento, int versao) {
             }
         }
         else {
-            // x->dir = RemoverRecursivo(x->dir, valor, versao);
-
             no* oldDir = ((struct SRight*) PegarModificacao(x, RIGHT, versao))->valor;
             no* newDir = RemoverRecursivo(oldDir, valor, segmento, versao);
 
@@ -608,7 +620,7 @@ no* RemoverRecursivo(no* x, float valor, reta* segmento, int versao) {
     return Balancear(x, versao);
 }
 
-
+// Função para verificar se um nó está presente na arvore rubro-negra
 int Consultar(Arn* T, float valor, reta* segmento) {
     if( T->raiz[T->ultima_versao] == NULL )
         return 0;
@@ -616,21 +628,17 @@ int Consultar(Arn* T, float valor, reta* segmento) {
     no* x = T->raiz[T->ultima_versao];
 
     while( x != NIL_PTR ){
-        // int key = ((struct SKey*) PegarModificacao(x, KEY, T->ultima_versao))->valor;
         reta* key = ((struct SKey*) PegarModificacao(x, KEY, T->ultima_versao))->valor;
 
-        // if( valor == key ) {
-        if ( calcular_y(valor, segmento) == calcular_y(valor, key) ) {
+        if ( Calcular_y(valor, segmento) == Calcular_y(valor, key) && segmento->r == key->r ) {
             return 1;
         }
         
         no* dir = ((struct SRight*) PegarModificacao(x, RIGHT, T->ultima_versao))->valor;
-        // int dirkey = ((struct SKey*) PegarModificacao(dir, KEY, T->ultima_versao))->valor;
         reta* dirkey = ((struct SKey*) PegarModificacao(dir, KEY, T->ultima_versao))->valor;
         no* esq = ((struct SLeft*) PegarModificacao(x, LEFT, T->ultima_versao))->valor;
 
-        // if( valor >= dirkey ) {
-        if ( dirkey != NULL && calcular_y(valor, segmento) >= calcular_y(valor, dirkey) ) {
+        if ( dirkey != NULL && Calcular_y(valor, segmento) >= Calcular_y(valor, dirkey) ) {
             x = dir;
         }
         else {
@@ -641,13 +649,12 @@ int Consultar(Arn* T, float valor, reta* segmento) {
     return 0;
 }
 
+// Função para remover um nó da arvore rubro-negra
 int Remover(Arn* T, float valor, reta* segmento) {
     if (Consultar(T, valor, segmento)) {
         T->raiz[T->ultima_versao] = RemoverRecursivo(T->raiz[T->ultima_versao], valor, segmento, T->ultima_versao);
 
         if ( T->raiz[T->ultima_versao] != NIL_PTR ) {
-            // T->raiz[T->ultima_versao]->cor = NEGRO;
-
             T->raiz[T->ultima_versao] = SalvarModificacao(T->raiz[T->ultima_versao], COR, T->ultima_versao, (void*) NEGRO);
         }
 
@@ -662,6 +669,7 @@ int Remover(Arn* T, float valor, reta* segmento) {
     }
 }
 
+// Função para pegar o nó sucessor de uma sub-árvore de uma árvore rubro-negra
 no* Sucessor(Arn* T, float valorX, float valorY, int versao) {
     struct no* x = T->raiz[versao];
     struct no* sucessor = NIL_PTR;
@@ -669,7 +677,7 @@ no* Sucessor(Arn* T, float valorX, float valorY, int versao) {
     while (x != NIL_PTR) {
         reta* key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
 
-        if ( calcular_y(valorX, key) > valorY ) {
+        if ( Calcular_y(valorX, key) > valorY ) {
             sucessor = x;
             x = ((struct SLeft*) PegarModificacao(x, LEFT, versao))->valor;
         } else {
@@ -680,6 +688,7 @@ no* Sucessor(Arn* T, float valorX, float valorY, int versao) {
     return sucessor;
 }
 
+// Função para imprimir em pós-ordem
 void PosOrdem(no* x, int nivel, int parent, char* dir) {
     if( x != NIL_PTR ){
         PosOrdem(x->esq, nivel+1, x->key, "<-");
@@ -693,6 +702,7 @@ void PosOrdem(no* x, int nivel, int parent, char* dir) {
     }
 }
 
+// Função para imprimir em ordem
 void EmOrdem(no* x, int nivel, int parent, char* dir) {
     if( x != NIL_PTR ){
         EmOrdem(x->esq, nivel+1, x->key, "<-");
@@ -706,66 +716,31 @@ void EmOrdem(no* x, int nivel, int parent, char* dir) {
     }
 }
 
+// Função para imprimir em pre-ordem
 void PreOrdem(no* x, int nivel, float parent, char* d, int versao, float valor) {
     if( x != NIL_PTR ) {
         no* dir = ((struct SRight*) PegarModificacao(x, RIGHT, versao))->valor;
         no* esq = ((struct SLeft*) PegarModificacao(x, LEFT, versao))->valor;
         Cor cor = ((struct SCor*) PegarModificacao(x, COR, versao))->valor;
-        // int key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
         reta* key = ((struct SKey*) PegarModificacao(x, KEY, versao))->valor;
 
         if(cor == RUBRO)
-            printf("%f  Vermelho: H(%d) P(%f) (%s) \n", calcular_y(valor, key), nivel, parent, d);
+            printf("%f  Vermelho: H(%d) P(%f) (%s) \n", Calcular_y(valor, key), nivel, parent, d);
         else
-            printf("%f  Preto:    H(%d) P(%f) (%s) \n", calcular_y(valor, key), nivel, parent, d);
+            printf("%f  Preto:    H(%d) P(%f) (%s) \n", Calcular_y(valor, key), nivel, parent, d);
 
-        PreOrdem(esq, nivel+1, calcular_y(valor, key), "<-", versao, valor);
-        PreOrdem(dir, nivel+1, calcular_y(valor, key), "->", versao, valor);
+        PreOrdem(esq, nivel+1, Calcular_y(valor, key), "<-", versao, valor);
+        PreOrdem(dir, nivel+1, Calcular_y(valor, key), "->", versao, valor);
     }
 }
 
-int comparar(const void *a, const void *b) {
-    return (*(int*)a - *(int*)b);
-}
-
-int remover_duplicatas(int *array, int tamanho) {
-    int i, j;
-    if (tamanho == 0 || tamanho == 1)
-        return tamanho;
-
-    for (i = 0, j = 1; j < tamanho; j++) {
-        if (array[j] != array[i]) {
-            i++;
-            array[i] = array[j];
-        }
-    }
-    return i + 1;
-}
-
-int ContarBloco (FILE *arquivo) {
-    int valor;
-    fscanf(arquivo, "%d", &valor);
-    return valor;
-}
-
-void LerRetas (FILE *arquivo, linha *retas, int quantidade) {
-    for (int i = 0; i < quantidade; i++) {
-        fscanf(arquivo, "%f,%f %f,%f", &retas[i].p1.x, &retas[i].p1.y, &retas[i].p2.x, &retas[i].p2.y);
-    }
-}
-
-void LerPontos (FILE *arquivo, ponto *pontos, int quantidade) {
-    for (int i = 0; i < quantidade; i++) {
-        fscanf(arquivo, "%f,%f", &pontos[i].x, &pontos[i].y);
-    }
-}
-
+// Função principal
 int main(int argc, char *argv[]) {
     int enable_debug = 0;
     
     if (argc != 2 && argc != 3) {
         printf("Uso: %s <input_file>\n", argv[0]);
-        // return 1;
+        return 1;
     }
 
     if (argc == 3) {
@@ -826,32 +801,23 @@ int main(int argc, char *argv[]) {
 
     reta* segmento;
 
-    /*float retas[N][4] = {
-        {0, 2, 4, 3},
-        {4, 3, 6, 5},
-        {4, 3, 7, 2},
-        {6, 1, 9, 0},
-        {2, 2, 5, 2}
-    };*/
-
     int tx = numeroLinhas*2;
     float* xs = malloc(tx * sizeof(int));
 
     for (int i=0; i<numeroLinhas; i++) {
-        xs[i] = retas[i].p1.x; // retas[i][0];
-        xs[numeroLinhas+i] = retas[i].p2.x; // retas[i][2];
+        xs[i] = retas[i].p1.x;
+        xs[numeroLinhas+i] = retas[i].p2.x;
     }
 
-    qsort(xs, tx, sizeof(int), comparar);
+    qsort(xs, tx, sizeof(int), Comparar);
 
-    tx = remover_duplicatas(xs, tx);
+    tx = Remover_Duplicatas(xs, tx);
 
     int nSegments = 0;
     int oldSegments = -1;
-    float vSegmento = retas[0].p1.x; // retas[0][0];
+    float vSegmento = retas[0].p1.x;
     int intervalo = 0;
     
-    // int intervalos[6];
     int *intervalos = (int*) malloc((tx-1) * sizeof(int));
     int *rg = (int*) malloc(numeroLinhas * sizeof(int));
 
@@ -870,7 +836,6 @@ int main(int argc, char *argv[]) {
         }
 
         for (int j=0; j<numeroLinhas; j++) {
-            // float x1 = retas[j][0], y1 = retas[j][1], x2 = retas[j][2], y2 = retas[j][3];
             float x1 = retas[j].p1.x, y1 = retas[j].p1.y, x2 = retas[j].p2.x, y2 = retas[j].p2.y;
 
             float x = ( xs[i] + xs[i+1] )/2;
@@ -983,22 +948,14 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    /*float pontos[N][2] = {
-        {1,1},
-        {3,1},
-        {5,3},
-        {7,0},
-        {6,2}
-    };*/
-
     printf("\n");
     fprintf(output, "\n");
 
     for (int i=0; i<numeroPontos; i++) {
         int intervaloAtual = 0;
         float xAtual = xs[0];
-        float x1 = pontos[i].x; // pontos[i][0];
-        float y1 = pontos[i].y; // pontos[i][1];
+        float x1 = pontos[i].x;
+        float y1 = pontos[i].y;
 
         int idx = 0; 
         while (x1 >= xs[idx+1]) {
@@ -1018,15 +975,4 @@ int main(int argc, char *argv[]) {
     }
 
     return 0;
-
-    /*
-    rever onde eu faço essa verificação, tava dando erro
-    // if ( esq_esq != NIL_PTR ) {
-        esq_esqCor = ((struct SCor*) PegarModificacao(esq_esq, COR, versao))->valor;
-    // }
-
-    float ou double?
-
-    deu certo para entrada atual, mas não deu para a antiga
-    */
 }
