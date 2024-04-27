@@ -11,7 +11,7 @@ gcc arn_2p.c -o arn_2p -lm
 ```
 Uso: ./arn_2p <input_file> <boolean_debug>
 
-Examplos: 
+Exemplos: 
     ./arn_2p exemplo_io_1.txt
     ./arn_2p exemplo_io_1.txt 0
     ./arn_2p exemplo_io_1.txt 1
@@ -20,6 +20,7 @@ Examplos:
 3. Passos para a resolução do problema:
 
 - 1º Passo: Implementação de uma Árvore Rubro-Negra, optando pela Árvore Rubro-Negra Caída para a Esquerda.
+
     ```
     struct no {
         struct reta*   key;
@@ -31,9 +32,11 @@ Examplos:
         int            qmods;
     };
     ```
+
     - Uso de uma estrutura de dados que represente a Árvore Rubro-Negra, sem o ponteiro para o pai, com um vetor de modificações, de tamanho máximo igual a 2.
 
 - 2º Passo: Implementação da persistência. 
+
     ```
     typedef struct {
         int versao;
@@ -41,6 +44,7 @@ Examplos:
         void *ref;
     } Mod;
     ```
+    
     - Uso de uma estrutura de dados onde é salva a versão de modificação;
     - Salva também o tipo da modificação;
     - Salva a referência para o valor da modificação.

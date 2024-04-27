@@ -582,7 +582,11 @@ no* RemoverRecursivo(no* x, float valor, reta* segmento, int versao) {
         dir = ((struct SRight*) PegarModificacao(x, RIGHT, versao))->valor;
         Cor dirCor = ((struct SCor*) PegarModificacao(dir, COR, versao))->valor;
         no* dir_esq = ((struct SLeft*) PegarModificacao(dir, LEFT, versao))->valor;
-        Cor dir_esqCor = ((struct SCor*) PegarModificacao(dir_esq, COR, versao))->valor;
+        Cor dir_esqCor;
+
+        if ( dir != NIL_PTR ) {
+            dir_esqCor = ((struct SCor*) PegarModificacao(dir_esq, COR, versao))->valor;
+        }
 
         if ( dirCor == NEGRO && dir_esqCor == NEGRO ) {
             x = MoverDireita(x, versao);
@@ -835,6 +839,11 @@ int main(int argc, char *argv[]) {
             printf("intervalo %d \n", i);
         }
 
+        int e = 0;
+        if (i == 13) {
+            e = i+2;
+        }
+
         for (int j=0; j<numeroLinhas; j++) {
             float x1 = retas[j].p1.x, y1 = retas[j].p1.y, x2 = retas[j].p2.x, y2 = retas[j].p2.y;
 
@@ -899,6 +908,7 @@ int main(int argc, char *argv[]) {
                 }
                 
                 if ( foundedSameAngle == 0 ) {
+                    float x = ( xs[i-1] + xs[i] )/2; // <-- pegar no periodo anterior
                     int code = Remover(T, x, segmento);
 
                     if ( enable_debug ) {
