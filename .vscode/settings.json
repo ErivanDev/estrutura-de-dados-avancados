@@ -2,6 +2,7 @@
     "files.associations": {
         "stdio.h": "c",
         "arn_2p.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "cob.h": "c"
     }
 }
