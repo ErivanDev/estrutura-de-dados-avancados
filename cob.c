@@ -55,7 +55,7 @@ int AcharNo(int indice, int tamanho) {
 void DeslocarDireita(vetor_auxiliar* vetor, int indice) {
 	int elemento = vetor->itens[indice];
 
-	while (vetor->itens[++indice] != -1) {
+	while (vetor->itens[++indice] != -2147483648) {
 		int temp = vetor->itens[indice];
 		vetor->itens[indice] = elemento;
 		elemento = temp;
@@ -68,7 +68,7 @@ double CalcularDensidade(vetor_auxiliar* vetor, int indice, int tamanho) {
 	int quantidade = 0;
 
 	for (int i = indice; i < indice+tamanho; i++) {
-		quantidade += (vetor->itens[i] != -1);
+		quantidade += (vetor->itens[i] != -2147483648);
 	}
 	
     double quantidade_double = (double) quantidade;
@@ -82,8 +82,8 @@ void Redistribuir(vetor_auxiliar* vetor, int indice, int tamanho) {
 	// colocar todos os valores dentro de um vetor temporario
     for (int i = indice; i < indice+tamanho; i++) {
 		temp[j] = vetor->itens[i];
-		j+=(vetor->itens[i]!=-1);
-		vetor->itens[i] = -1;
+		j+=(vetor->itens[i]!=-2147483648);
+		vetor->itens[i] = -2147483648;
 	}
 
     // redistribuir uniformemente para uma densidade uniforme
@@ -104,7 +104,7 @@ void TableDoubling(vetor_auxiliar* vetor, arvore_layout_veb* arvoreLVEB) {
 	vetor->H = bsr_word(vetor->N/vetor->logN);
 	vetor->itens = (int*) realloc(vetor->itens, vetor->N*sizeof(*(vetor->itens)));
 	for (int i = vetor->N/2; i < vetor->N; i++) {
-		vetor->itens[i] = -1;
+		vetor->itens[i] = -2147483648;
 	}
 	Redistribuir(vetor, 0, vetor->N);
 
@@ -120,13 +120,13 @@ void TableHalving(vetor_auxiliar* vetor, arvore_layout_veb* arvoreLVEB) {
 	int j = 0;
 	
     for (int i = 0; i < vetor->N*2; i++) {
-		if (vetor->itens[i] != -1) {
+		if (vetor->itens[i] != -2147483648) {
 			novo_vetor[j++] = vetor->itens[i];
 		}
     }
 	
     for (int i = j; j < vetor->N; j++) {
-		novo_vetor[j] = -1;
+		novo_vetor[j] = -2147483648;
 	}
 	
     free(vetor->itens);
@@ -139,7 +139,7 @@ void TableHalving(vetor_auxiliar* vetor, arvore_layout_veb* arvoreLVEB) {
 
 void PrintarVetor(vetor_auxiliar* vetor, FILE* saida) {
 	for (int i = 0; i < vetor->N; i++) {
-		if (vetor->itens[i] == -1) {
+		if (vetor->itens[i] == -2147483648) {
 			// printf("/ ");
 		} else {
 			printf("%d ", vetor->itens[i]);
@@ -156,7 +156,7 @@ void IniciarVetor(vetor_auxiliar* vetor) {
 	vetor->itens = (int*)malloc(vetor->N*sizeof(*(vetor->itens)));
 
 	for (int i = 0; i < vetor->N; i++) {
-		vetor->itens[i] = -1;
+		vetor->itens[i] = -2147483648;
 	}
 }
 
@@ -168,7 +168,7 @@ intervalo Inserir(vetor_auxiliar* vetor, arvore_layout_veb* arvoreLVEB, int indi
 	int tamanho = vetor->logN;
 
 	// se tiver espaço coloca, se não cria espaço dislocando para a direita
-	if (vetor->itens[indice] == -1) {
+	if (vetor->itens[indice] == -2147483648) {
 		vetor->itens[indice] = valor;
 	} else {
 		DeslocarDireita(vetor, indice);
@@ -229,7 +229,7 @@ intervalo Deletar(vetor_auxiliar* vetor, arvore_layout_veb* arvoreLVEB, int indi
 
 	limite lim = CalcularLimitedeDensidade(vetor, nivel);
 
-	if(vetor->itens[indice]== -1){
+	if(vetor->itens[indice]== -2147483648){
 		// printf("Este elemento nao existe neste indice: %d \n", indice);
 
 		intervalo intervaloAlterado;
@@ -240,7 +240,7 @@ intervalo Deletar(vetor_auxiliar* vetor, arvore_layout_veb* arvoreLVEB, int indi
 	}
 	
 	// deleção
-	vetor->itens[indice] = -1;
+	vetor->itens[indice] = -2147483648;
 
 	// redistribuir 'recursivamente' até estar dentro dos limites de densidade
 	double densidade = CalcularDensidade(vetor, indice_no, tamanho);
@@ -625,7 +625,7 @@ int main(int argc, char *argv[]) {
     }
 
 	for (int i = 0; i < tamanho; i++) {
-		if ( aux->itens[array[i]] != -1 ) {
+		if ( aux->itens[array[i]] != -2147483648 ) {
 			int indice = ProcurarNo(cob->arvore, aux->itens[array[i]]);
 			intervalo interA = Deletar(cob->vetor, cob->arvore, indice);
 
